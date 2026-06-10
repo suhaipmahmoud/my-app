@@ -1,0 +1,33 @@
+import streamlit as st
+import speech_recognition as sr
+from pydub import AudioSegment
+import os
+
+st.title("🎙️ محول كل الملفات (بدون قيود)")
+
+# إزالة تحديد النوع للسماح برؤية كل الملفات
+uploaded_file = st.file_uploader("ارفع الملف الصوتي أو الفيديو (mp3, wav, ogg, opus, mp4, ...)")
+
+if uploaded_file is not None:
+    # حفظ الملف باسم ثابت
+    file_path = "input_file"
+    with open(file_path, "wb") as f:
+        f.write(uploaded_file.getbuffer())
+    
+    st.write("جاري التحليل...")
+    
+    try:
+        # تحميل الملف مهما كانت صيغته
+        audio = AudioSegment.from_file(file_path)
+        audio.export("temp_wav.wav", format="wav")
+        
+        # تحويل للنص
+        r = sr.Recognizer()
+        with sr.AudioFile("temp_wav.wav") as source:
+            audio_data = r.record(source)
+            text = r.recognize_google(audio_data, language="ar-SA")
+            st.success("تم!")
+            st.text_area("النص:", text, height=300)
+    except Exception as e:
+        st.error(f"حدث خطأ: {e}")
+        st.write("ملاحظة: إذا ظهر خطأ FFmpeg، يجب تثبيت البرنامج من الإنترنت.")
