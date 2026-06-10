@@ -1,38 +1,37 @@
 import streamlit as st
 import speech_recognition as sr
+import librosa
+import soundfile as sf
 import os
 
-st.title("🎙️ محول الصوت السريع")
+st.title("🎙️ محول الصوت الشامل")
 
-uploaded_file = st.file_uploader("ارفع ملف صوتي (يفضل .wav لضمان العمل بدون مشاكل)")
+uploaded_file = st.file_uploader("ارفع أي ملف صوتي")
 
 if uploaded_file is not None:
-    file_path = "temp_file.wav"
-    
-    # حفظ الملف المرفوع مباشرة
-    with open(file_path, "wb") as f:
+    # 1. حفظ الملف المرفوع
+    with open("temp_input", "wb") as f:
         f.write(uploaded_file.getbuffer())
     
-    st.write("جاري المعالجة...")
+    st.write("جاري التحويل...")
     
     try:
-        r = sr.Recognizer()
+        # 2. تحويل أي صيغة إلى WAV باستخدام librosa
+        # هذه الخطوة هي التي تنهي مشكلة "لا يقبل إلا wav"
+        audio, sr_rate = librosa.load("temp_input", sr=None)
+        sf.write("temp_output.wav", audio, sr_rate)
         
-        # قراءة الملف مباشرة بدون تحويل معقد
-        with sr.AudioFile(file_path) as source:
-            # تقليل حجم البيانات المأخوذة لتسريع العملية
+        # 3. معالجة الملف المحول
+        r = sr.Recognizer()
+        with sr.AudioFile("temp_output.wav") as source:
             audio_data = r.record(source)
-            
-            # التحويل باستخدام سيرفرات جوجل (سريع جداً)
             text = r.recognize_google(audio_data, language="ar-SA")
-            
             st.success("تم التحويل!")
             st.text_area("النص:", text, height=300)
             
     except Exception as e:
-        st.error("حدث خطأ. تأكد أن الملف ليس طويلاً جداً أو بصيغة غير مدعومة.")
-        st.write("نصيحة: إذا استمرت المشكلة، جرب رفع ملف بصيغة WAV فقط.")
+        st.error(f"خطأ: {e}")
     
     # تنظيف
-    if os.path.exists(file_path):
-        os.remove(file_path)
+    if os.path.exists("temp_input"): os.remove("temp_input")
+    if os.path.exists("temp_output.wav"): os.remove("temp_output.wav")
