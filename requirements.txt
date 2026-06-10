@@ -2,3 +2,4 @@ streamlit
 SpeechRecognition
 librosa
 soundfile
+pydub
