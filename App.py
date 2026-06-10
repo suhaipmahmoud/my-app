@@ -2,35 +2,34 @@ import streamlit as st
 import speech_recognition as sr
 import librosa
 import soundfile as sf
-import os
+import io
 
-st.title("🎙️ محول الصوت الشامل")
+st.title("🎙️ محول الصوت الاحترافي")
 
-uploaded_file = st.file_uploader("ارفع ملف صوتي (يفضل أحجام صغيرة)")
+uploaded_file = st.file_uploader("ارفع ملفك الصغير")
 
 if uploaded_file is not None:
-    # 1. فحص الحجم قبل البدء (لتجنب انهيار السيرفر)
-    if uploaded_file.size > 10 * 1024 * 1024:  # 10 ميجابايت كحد أقصى
-        st.error("الملف كبير جداً! حاول رفع مقطع أقل من 10 ميجابايت.")
-    else:
-        with open("temp_input", "wb") as f:
-            f.write(uploaded_file.getbuffer())
+    st.write("جاري المعالجة المباشرة...")
+    
+    try:
+        # قراءة محتوى الملف إلى الذاكرة مباشرة
+        audio_bytes = uploaded_file.read()
         
-        st.write("جاري التحويل...")
+        # تحويل من الذاكرة باستخدام librosa
+        audio, sr_rate = librosa.load(io.BytesIO(audio_bytes), sr=None)
         
-        try:
-            # 2. تحويل أول 60 ثانية فقط من الصوت لضمان عدم التعليق
-            audio, sr_rate = librosa.load("temp_input", sr=None, duration=60)
-            sf.write("temp_output.wav", audio, sr_rate)
+        # حفظ الـ wav في الذاكرة أيضاً (بدون إنشاء ملف على القرص)
+        wav_io = io.BytesIO()
+        sf.write(wav_io, audio, sr_rate, format='wav')
+        wav_io.seek(0)
+        
+        # التحويل للنص
+        r = sr.Recognizer()
+        with sr.AudioFile(wav_io) as source:
+            audio_data = r.record(source)
+            text = r.recognize_google(audio_data, language="ar-SA")
+            st.success("تم التحويل!")
+            st.text_area("النص:", text, height=300)
             
-            r = sr.Recognizer()
-            with sr.AudioFile("temp_output.wav") as source:
-                audio_data = r.record(source)
-                text = r.recognize_google(audio_data, language="ar-SA")
-                st.success("تم التحويل بنجاح!")
-                st.text_area("النص:", text, height=300)
-        except Exception as e:
-            st.error(f"خطأ: {e}")
-        
-        if os.path.exists("temp_input"): os.remove("temp_input")
-        if os.path.exists("temp_output.wav"): os.remove("temp_output.wav")
+    except Exception as e:
+        st.error(f"حدث خطأ برمجياً: {e}")
