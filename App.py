@@ -2,7 +2,7 @@ import streamlit as st
 import speech_recognition as sr
 import os
 
-st.title("🎙️ محول الصوت المضمون")
+st.title("🎙️ Audio converter program developed by Suhaib  ")
 
 # إضافة رابط لموقع تحويل سريع للمستخدم
 st.warning("إذا لم يعمل ملفك، حوله إلى صيغة WAV من هنا: [Online Audio Converter](https://online-audio-converter.com/)")
